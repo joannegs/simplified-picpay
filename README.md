@@ -163,4 +163,4 @@ Ideias para continuar evoluindo o projeto como exercício de aprendizado:
 Desenvolvido por **Joanne Silva** como projeto de estudo em Spring Boot.
 
 - GitHub: [@joannegs](https://github.com/joannegs)
-- E-mail: outtblues@gmail.com
+- E-mail: joanneegabriela@gmail.com
