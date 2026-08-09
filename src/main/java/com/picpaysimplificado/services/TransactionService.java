@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import com.picpaysimplificado.repositories.TransactionRepository;
 
@@ -27,6 +28,7 @@ public class TransactionService {
     @Value("${transaction.authorization.url}")
     private String authorizationUrl;
 
+    @Transactional(rollbackFor = Exception.class)
     public Transaction createTransaction(TransactionDTO transactionDTO) throws Exception {
         User sender = this.userService.findUserById(transactionDTO.senderId());
         User receiver = this.userService.findUserById(transactionDTO.receiverId());

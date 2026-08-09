@@ -62,7 +62,7 @@ Essa separação mantém os controllers finos (apenas orquestram requisição/re
 1. Um usuário do tipo `MERCHANT` não pode enviar dinheiro, apenas receber.
 2. O remetente precisa ter saldo igual ou superior ao valor da transação.
 3. Toda transação passa por um serviço externo de autorização; se ele negar, a transação é bloqueada.
-4. Após uma transação autorizada, o saldo de remetente e destinatário é atualizado e ambos recebem uma notificação.
+4. Após uma transação autorizada, o saldo de remetente e destinatário é atualizado e ambos recebem uma notificação. Toda a operação é executada dentro de uma transação (`@Transactional`), garantindo atomicidade: qualquer falha no meio do processo desfaz as alterações já feitas.
 5. Falhas em qualquer etapa (usuário inexistente, saldo insuficiente, não autorizado, serviço de notificação indisponível) interrompem a operação e retornam uma mensagem de erro clara.
 
 ## Endpoints da API
@@ -154,7 +154,6 @@ Ideias para continuar evoluindo o projeto como exercício de aprendizado:
 - Autenticação e autorização com Spring Security + JWT
 - Documentação interativa da API com Swagger/OpenAPI
 - Migração do H2 para um banco relacional persistente (PostgreSQL) em produção
-- Uso de `@Transactional` para garantir atomicidade na transferência entre contas
 - Testes de integração com `@SpringBootTest` e `@DataJpaTest`
 - Containerização com Docker e pipeline de CI/CD
 
