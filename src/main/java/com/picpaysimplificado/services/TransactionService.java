@@ -5,6 +5,7 @@ import com.picpaysimplificado.domain.transaction.Transaction;
 import com.picpaysimplificado.domain.user.User;
 import com.picpaysimplificado.exception.TransactionNotAuthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ public class TransactionService {
     @Autowired private TransactionRepository transactionRepository;
     @Autowired private RestTemplate restTemplate;
     @Autowired private NotificationService notificationService;
+
+    @Value("${transaction.authorization.url}")
+    private String authorizationUrl;
 
     public Transaction createTransaction(TransactionDTO transactionDTO) throws Exception {
         User sender = this.userService.findUserById(transactionDTO.senderId());
@@ -53,7 +57,7 @@ public class TransactionService {
     }
 
     public boolean authorizedTransaction(User sender, BigDecimal value) {
-        ResponseEntity<Map> authorizationResponse = restTemplate.getForEntity("https://run.mocky.io/v3/5794d450-d2e2-4412-8131-73d0293ac1cc", Map.class);
+        ResponseEntity<Map> authorizationResponse = restTemplate.getForEntity(authorizationUrl, Map.class);
         if(authorizationResponse.getStatusCode() == HttpStatus.OK) {
             return Objects.requireNonNull(authorizationResponse.getBody()).get("message").equals("Autorizado");
         } else return false;

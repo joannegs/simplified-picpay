@@ -6,7 +6,6 @@ import com.picpaysimplificado.domain.user.UserType;
 import com.picpaysimplificado.exception.InsufficientBalanceException;
 import com.picpaysimplificado.exception.UnauthorizedUserException;
 import com.picpaysimplificado.exception.UserNotFoundException;
-import com.picpaysimplificado.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
