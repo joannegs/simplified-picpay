@@ -1,4 +1,4 @@
-# PicPay Simplificado
+# Simplified PicPay
 
 <p>
   <img src="https://img.shields.io/badge/Java-17-orange?logo=openjdk&logoColor=white" alt="Java 17"/>
@@ -112,8 +112,8 @@ This separation keeps controllers thin (only orchestrating request/response), co
 
 ```bash
 # clone the repository
-git clone https://github.com/joannegs/picpay-simplificado.git
-cd picpay-simplificado
+git clone https://github.com/joannegs/simplified-picpay.git
+cd simplified-picpay
 
 # run the application (Windows)
 .\mvnw.cmd spring-boot:run
