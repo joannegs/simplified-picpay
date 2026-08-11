@@ -28,7 +28,7 @@ class UserControllerTest {
     private UserController userController;
 
     @Test
-    void createUser_shouldReturnCreatedUserWithStatus201() {
+    void createUser_shouldReturnCreatedUserWithStatus201() throws Exception {
         UserDTO userDTO = new UserDTO("John", "Doe", "12345678900",
                 new BigDecimal("100.00"), "john@email.com", "password", UserType.COMMON);
         User createdUser = new User(userDTO);

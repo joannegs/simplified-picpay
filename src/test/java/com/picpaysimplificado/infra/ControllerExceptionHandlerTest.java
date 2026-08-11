@@ -1,6 +1,7 @@
 package com.picpaysimplificado.infra;
 
 import com.picpaysimplificado.DTOs.ExceptionDTO;
+import com.picpaysimplificado.exception.InvalidCpfException;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,6 +42,17 @@ class ControllerExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().message()).isEqualTo("something went wrong");
+        assertThat(response.getBody().statusCode()).isEqualTo("500");
+    }
+
+    @Test
+    void handleGenericException_shouldReturnInternalServerErrorWithFriendlyMessage_whenExceptionIsInvalidCpf() {
+        InvalidCpfException exception = new InvalidCpfException();
+
+        ResponseEntity<ExceptionDTO> response = handler.handleGenericException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody().message()).isEqualTo("CPF inválido");
         assertThat(response.getBody().statusCode()).isEqualTo("500");
     }
 }

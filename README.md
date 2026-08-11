@@ -20,6 +20,7 @@ More than just "making it work," the goal was to understand the *why* behind eac
 ## Features
 
 - User registration, with two distinct profiles: `COMMON` (can send and receive money) and `MERCHANT` (can only receive)
+- CPF validation on registration, using the [Caelum Stella](https://github.com/caelum/caelum-stella) library to check digit correctness (not just format)
 - Listing of all registered users
 - Money transfer between two users, with:
   - Sender balance validation
@@ -38,6 +39,7 @@ More than just "making it work," the goal was to understand the *why* behind eac
 | Build                 | Maven (with Maven Wrapper)                                      |
 | Boilerplate reduction | Lombok                                                          |
 | HTTP integration      | RestTemplate (external authorization and notification services) |
+| CPF validation        | Caelum Stella (`caelum-stella-core`)                            |
 | Testing               | JUnit 5, Mockito, AssertJ, MockMvc, MockRestServiceServer       |
 
 ## Architecture
@@ -47,7 +49,7 @@ The project follows a layered architecture, organized by responsibility:
 ```
 src/main/java/com/picpaysimplificado
 ├── controllers/     # REST endpoints (UserController, TransactionController)
-├── services/        # Business rules (UserService, TransactionService, NotificationService)
+├── services/        # Business rules (UserService, TransactionService, NotificationService, CpfValidationService)
 ├── repositories/     # Data access via Spring Data JPA
 ├── domain/           # JPA entities (User, Transaction, UserType)
 ├── DTOs/              # Records used as the API's input/output contract
@@ -59,11 +61,12 @@ This separation keeps controllers thin (only orchestrating request/response), co
 
 ## Business rules
 
-1. A `MERCHANT` user cannot send money, only receive it.
-2. The sender must have a balance equal to or greater than the transaction value.
-3. Every transaction goes through an external authorization service; if it denies the request, the transaction is blocked.
-4. After an authorized transaction, both the sender's and receiver's balances are updated and both receive a notification. The whole operation runs inside a transaction (`@Transactional`), guaranteeing atomicity: any failure partway through the process rolls back the changes already made.
-5. Failures at any step (user not found, insufficient balance, unauthorized, notification service unavailable) interrupt the operation and return a clear error message.
+1. A user's `document` must be a valid CPF (correct check digits, not just 11 digits) — registration is rejected otherwise.
+2. A `MERCHANT` user cannot send money, only receive it.
+3. The sender must have a balance equal to or greater than the transaction value.
+4. Every transaction goes through an external authorization service; if it denies the request, the transaction is blocked.
+5. After an authorized transaction, both the sender's and receiver's balances are updated and both receive a notification. The whole operation runs inside a transaction (`@Transactional`), guaranteeing atomicity: any failure partway through the process rolls back the changes already made.
+6. Failures at any step (user not found, insufficient balance, unauthorized, invalid CPF, notification service unavailable) interrupt the operation and return a clear error message.
 
 ## API endpoints
 
@@ -79,13 +82,14 @@ This separation keeps controllers thin (only orchestrating request/response), co
 {
   "firstName": "Joanne",
   "lastName": "Silva",
-  "document": "12345678900",
+  "document": "12345678909",
   "balance": 500.00,
   "email": "joanne@email.com",
   "password": "senha123",
   "userType": "COMMON"
 }
 ```
+> `document` must be a valid CPF — the API rejects registrations with mistyped or fake numbers.
 
 ### Transactions
 
@@ -157,7 +161,8 @@ src/test/java/com/picpaysimplificado
 ├── services/
 │   ├── UserServiceTest.java                        # unit
 │   ├── TransactionServiceTest.java                 # unit
-│   └── NotificationServiceTest.java                # unit
+│   ├── NotificationServiceTest.java                # unit
+│   └── CpfValidationServiceTest.java               # unit
 ├── repositories/
 │   ├── UserRepositoryIntegrationTest.java          # integration
 │   └── TransactionRepositoryIntegrationTest.java   # integration

@@ -44,7 +44,7 @@ class UserControllerIntegrationTest {
 
     @Test
     void createUser_shouldPersistUserAndReturnStatus201() throws Exception {
-        UserDTO userDTO = buildUserDTO("12345678900", "john@email.com");
+        UserDTO userDTO = buildUserDTO("12345678909", "john@email.com");
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -55,15 +55,15 @@ class UserControllerIntegrationTest {
                 .andExpect(jsonPath("$.email").value("john@email.com"))
                 .andExpect(jsonPath("$.balance").value(100.00));
 
-        assertThat(userRepository.findUserByDocument("12345678900")).isPresent();
+        assertThat(userRepository.findUserByDocument("12345678909")).isPresent();
     }
 
     @Test
     void createUser_shouldReturnBadRequest_whenDocumentAlreadyExists() throws Exception {
         userRepository.save(new User(
-                buildUserDTO("12345678900", "existing@email.com")));
+                buildUserDTO("12345678909", "existing@email.com")));
 
-        UserDTO duplicated = buildUserDTO("12345678900", "new@email.com");
+        UserDTO duplicated = buildUserDTO("12345678909", "new@email.com");
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -78,7 +78,7 @@ class UserControllerIntegrationTest {
         userRepository.save(new User(
                 buildUserDTO("11111111111", "john@email.com")));
 
-        UserDTO duplicated = buildUserDTO("22222222222", "john@email.com");
+        UserDTO duplicated = buildUserDTO("11122233396", "john@email.com");
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -86,6 +86,20 @@ class UserControllerIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Usuário já cadastrado"))
                 .andExpect(jsonPath("$.statusCode").value("400"));
+    }
+
+    @Test
+    void createUser_shouldReturnInternalServerError_whenDocumentIsNotAValidCpf() throws Exception {
+        UserDTO userDTO = buildUserDTO("12345678900", "invalid-cpf@email.com");
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDTO)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("CPF inválido"))
+                .andExpect(jsonPath("$.statusCode").value("500"));
+
+        assertThat(userRepository.findUserByDocument("12345678900")).isEmpty();
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.picpaysimplificado.DTOs.UserDTO;
 import com.picpaysimplificado.domain.user.User;
 import com.picpaysimplificado.domain.user.UserType;
 import com.picpaysimplificado.exception.InsufficientBalanceException;
+import com.picpaysimplificado.exception.InvalidCpfException;
 import com.picpaysimplificado.exception.UnauthorizedUserException;
 import com.picpaysimplificado.exception.UserNotFoundException;
 import com.picpaysimplificado.repositories.UserRepository;
@@ -22,7 +23,11 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,6 +37,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private CpfValidationService cpfValidationService;
 
     @InjectMocks
     private UserService userService;
@@ -81,7 +89,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createUser_shouldBuildUserFromDtoAndSaveIt() {
+    void createUser_shouldBuildUserFromDtoAndSaveIt() throws InvalidCpfException {
         UserDTO userDTO = new UserDTO("Jane", "Doe", "98765432100",
                 new BigDecimal("300.00"), "jane@email.com", "password", UserType.COMMON);
 
@@ -93,6 +101,27 @@ class UserServiceTest {
         assertThat(result.getFirstName()).isEqualTo(userDTO.firstName());
         assertThat(result.getEmail()).isEqualTo(userDTO.email());
         assertThat(captor.getValue()).isEqualTo(result);
+    }
+
+    @Test
+    void createUser_shouldValidateDocumentAsCpfBeforeSaving() throws InvalidCpfException {
+        UserDTO userDTO = new UserDTO("Jane", "Doe", "98765432100",
+                new BigDecimal("300.00"), "jane@email.com", "password", UserType.COMMON);
+
+        userService.createUser(userDTO);
+
+        verify(cpfValidationService, times(1)).validate("98765432100");
+    }
+
+    @Test
+    void createUser_shouldThrowInvalidCpfExceptionAndNotSaveUser_whenCpfIsInvalid() throws InvalidCpfException {
+        UserDTO userDTO = new UserDTO("Jane", "Doe", "12345678900",
+                new BigDecimal("300.00"), "jane@email.com", "password", UserType.COMMON);
+        doThrow(new InvalidCpfException()).when(cpfValidationService).validate(anyString());
+
+        assertThrows(InvalidCpfException.class, () -> userService.createUser(userDTO));
+
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test

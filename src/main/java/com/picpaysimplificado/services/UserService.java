@@ -4,6 +4,7 @@ import com.picpaysimplificado.DTOs.UserDTO;
 import com.picpaysimplificado.domain.user.User;
 import com.picpaysimplificado.domain.user.UserType;
 import com.picpaysimplificado.exception.InsufficientBalanceException;
+import com.picpaysimplificado.exception.InvalidCpfException;
 import com.picpaysimplificado.exception.UnauthorizedUserException;
 import com.picpaysimplificado.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.List;
 public class UserService {
 
     @Autowired private UserRepository userRepository;
+    @Autowired private CpfValidationService cpfValidationService;
 
     public void validateTransaction(User sender, BigDecimal amount) throws Exception {
         if(sender.getUserType() == UserType.MERCHANT) {
@@ -34,7 +36,9 @@ public class UserService {
         return this.userRepository.findUserById(id).orElseThrow(UserNotFoundException::new);
     }
 
-    public User createUser(UserDTO data) {
+    public User createUser(UserDTO data) throws InvalidCpfException {
+        this.cpfValidationService.validate(data.document());
+
         User newUser = new User(data);
         this.saveUser(newUser);
 
