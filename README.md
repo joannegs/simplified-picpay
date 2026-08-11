@@ -6,75 +6,75 @@
   <img src="https://img.shields.io/badge/Maven-build-C71A36?logo=apachemaven&logoColor=white" alt="Maven"/>
   <img src="https://img.shields.io/badge/H2-database-blue?logo=h2&logoColor=white" alt="H2 Database"/>
   <img src="https://img.shields.io/badge/JUnit%205-tests-25A162?logo=junit5&logoColor=white" alt="JUnit 5"/>
-  <img src="https://img.shields.io/badge/status-em%20estudo-yellow" alt="Status"/>
+  <img src="https://img.shields.io/badge/status-learning%20project-yellow" alt="Status"/>
 </p>
 
-Uma API REST que simula o backend de um serviço de pagamentos peer-to-peer nos moldes do PicPay: cadastro de usuários (comuns e lojistas), transferência de dinheiro entre contas e validações de negócio como saldo, tipo de usuário e autorização externa da transação.
+A REST API that simulates the backend of a peer-to-peer payment service in the style of PicPay: user registration (common users and merchants), money transfers between accounts, and business validations such as balance checks, user type restrictions, and external transaction authorization.
 
-## Sobre o projeto
+## About the project
 
-Este repositório foi construído como um projeto de estudo focado em aprofundar conhecimentos em **Spring Boot** e nas práticas comuns de uma API backend em Java: arquitetura em camadas, injeção de dependência, persistência com JPA, tratamento centralizado de exceções, integração com serviços externos via `RestTemplate` e testes unitários com mocks.
+This repository was built as a learning project focused on deepening knowledge of **Spring Boot** and common practices for a backend API in Java: layered architecture, dependency injection, persistence with JPA, centralized exception handling, integration with external services via `RestTemplate`, and a full test suite covering both isolated unit tests and end-to-end integration tests.
 
-Mais do que "fazer funcionar", o objetivo foi entender o *porquê* de cada decisão — como separar responsabilidades entre `controller`, `service` e `repository`, como modelar regras de negócio no domínio, e como cobrir esse comportamento com testes isolados e confiáveis.
+More than just "making it work," the goal was to understand the *why* behind each decision — how to separate responsibilities between `controller`, `service`, and `repository`, how to model business rules in the domain layer, and how to cover that behavior with reliable, well-isolated tests.
 
-## Funcionalidades
+## Features
 
-- Cadastro de usuários, com dois perfis distintos: `COMMON` (pode enviar e receber dinheiro) e `MERCHANT` / lojista (pode apenas receber)
-- Listagem de todos os usuários cadastrados
-- Transferência de dinheiro entre dois usuários, com:
-  - Validação de saldo suficiente do remetente
-  - Bloqueio de envio por parte de lojistas
-  - Autorização externa da transação via serviço mock (simulando um serviço antifraude)
-  - Notificação assíncrona ao remetente e ao destinatário após a conclusão
-- Tratamento centralizado de erros, com respostas HTTP e mensagens padronizadas para cada tipo de falha
+- User registration, with two distinct profiles: `COMMON` (can send and receive money) and `MERCHANT` (can only receive)
+- Listing of all registered users
+- Money transfer between two users, with:
+  - Sender balance validation
+  - Merchants blocked from sending money
+  - External transaction authorization via a mock service (simulating an anti-fraud service)
+  - Asynchronous notification to both sender and receiver upon completion
+- Centralized error handling, with standardized HTTP responses and messages for each type of failure
 
-## Tecnologias utilizadas
+## Tech stack
 
-| Categoria         | Tecnologia                                    |
-|-------------------|------------------------------------------------|
-| Linguagem         | Java 17                                         |
-| Framework         | Spring Boot 3.2.4 (Web, Data JPA)               |
-| Persistência      | Spring Data JPA + H2 (banco em memória)         |
-| Build             | Maven (com Maven Wrapper)                       |
-| Redução de boilerplate | Lombok                                     |
-| Integração HTTP   | RestTemplate (serviços externos de autorização e notificação) |
-| Testes            | JUnit 5, Mockito, AssertJ                       |
+| Category              | Technology                                                      |
+| --------------------- | --------------------------------------------------------------- |
+| Language              | Java 17                                                         |
+| Framework             | Spring Boot 3.2.4 (Web, Data JPA)                               |
+| Persistence           | Spring Data JPA + H2 (in-memory database)                       |
+| Build                 | Maven (with Maven Wrapper)                                      |
+| Boilerplate reduction | Lombok                                                          |
+| HTTP integration      | RestTemplate (external authorization and notification services) |
+| Testing               | JUnit 5, Mockito, AssertJ, MockMvc, MockRestServiceServer       |
 
-## Arquitetura
+## Architecture
 
-O projeto segue uma arquitetura em camadas, organizada por responsabilidade:
+The project follows a layered architecture, organized by responsibility:
 
 ```
 src/main/java/com/picpaysimplificado
-├── controllers/     # Endpoints REST (UserController, TransactionController)
-├── services/        # Regras de negócio (UserService, TransactionService, NotificationService)
-├── repositories/     # Acesso a dados via Spring Data JPA
-├── domain/           # Entidades JPA (User, Transaction, UserType)
-├── DTOs/              # Records usados como contrato de entrada/saída da API
-├── exception/          # Exceções de negócio customizadas
-└── infra/                # Configurações e tratamento global de exceções
+├── controllers/     # REST endpoints (UserController, TransactionController)
+├── services/        # Business rules (UserService, TransactionService, NotificationService)
+├── repositories/     # Data access via Spring Data JPA
+├── domain/           # JPA entities (User, Transaction, UserType)
+├── DTOs/              # Records used as the API's input/output contract
+├── exception/          # Custom business exceptions
+└── infra/                # Configuration and global exception handling
 ```
 
-Essa separação mantém os controllers finos (apenas orquestram requisição/resposta), concentra as regras de negócio nos services e isola o acesso a dados nos repositories — facilitando tanto a manutenção quanto a escrita de testes unitários isolados por camada.
+This separation keeps controllers thin (only orchestrating request/response), concentrates business rules in the services, and isolates data access in the repositories — making it easier to both maintain the code and write tests isolated by layer.
 
-## Regras de negócio
+## Business rules
 
-1. Um usuário do tipo `MERCHANT` não pode enviar dinheiro, apenas receber.
-2. O remetente precisa ter saldo igual ou superior ao valor da transação.
-3. Toda transação passa por um serviço externo de autorização; se ele negar, a transação é bloqueada.
-4. Após uma transação autorizada, o saldo de remetente e destinatário é atualizado e ambos recebem uma notificação. Toda a operação é executada dentro de uma transação (`@Transactional`), garantindo atomicidade: qualquer falha no meio do processo desfaz as alterações já feitas.
-5. Falhas em qualquer etapa (usuário inexistente, saldo insuficiente, não autorizado, serviço de notificação indisponível) interrompem a operação e retornam uma mensagem de erro clara.
+1. A `MERCHANT` user cannot send money, only receive it.
+2. The sender must have a balance equal to or greater than the transaction value.
+3. Every transaction goes through an external authorization service; if it denies the request, the transaction is blocked.
+4. After an authorized transaction, both the sender's and receiver's balances are updated and both receive a notification. The whole operation runs inside a transaction (`@Transactional`), guaranteeing atomicity: any failure partway through the process rolls back the changes already made.
+5. Failures at any step (user not found, insufficient balance, unauthorized, notification service unavailable) interrupt the operation and return a clear error message.
 
-## Endpoints da API
+## API endpoints
 
-### Usuários
+### Users
 
-| Método | Rota      | Descrição                     |
-|--------|-----------|--------------------------------|
-| POST   | `/users`  | Cria um novo usuário           |
-| GET    | `/users`  | Lista todos os usuários        |
+| Method | Route    | Description                |
+| ------ | -------- | -------------------------- |
+| POST   | `/users` | Creates a new user         |
+| GET    | `/users` | Lists all registered users |
 
-**Exemplo de requisição — `POST /users`**
+**Example request — `POST /users`**
 ```json
 {
   "firstName": "Joanne",
@@ -87,13 +87,13 @@ Essa separação mantém os controllers finos (apenas orquestram requisição/re
 }
 ```
 
-### Transações
+### Transactions
 
-| Método | Rota          | Descrição                          |
-|--------|---------------|--------------------------------------|
-| POST   | `/transactions` | Realiza uma transferência entre dois usuários |
+| Method | Route           | Description                           |
+| ------ | --------------- | ------------------------------------- |
+| POST   | `/transactions` | Performs a transfer between two users |
 
-**Exemplo de requisição — `POST /transactions`**
+**Example request — `POST /transactions`**
 ```json
 {
   "value": 100.00,
@@ -102,27 +102,27 @@ Essa separação mantém os controllers finos (apenas orquestram requisição/re
 }
 ```
 
-## Como executar o projeto
+## How to run the project
 
-**Pré-requisitos:** Java 17+ instalado. O Maven não precisa estar instalado globalmente — o projeto já inclui o Maven Wrapper.
+**Prerequisites:** Java 17+ installed. Maven doesn't need to be installed globally — the project already includes the Maven Wrapper.
 
 ```bash
-# clone o repositório
+# clone the repository
 git clone https://github.com/joannegs/picpay-simplificado.git
 cd picpay-simplificado
 
-# execute a aplicação (Windows)
+# run the application (Windows)
 .\mvnw.cmd spring-boot:run
 
-# execute a aplicação (Linux/macOS)
+# run the application (Linux/macOS)
 ./mvnw spring-boot:run
 ```
 
-A API sobe por padrão em `http://localhost:8080`.
+The API runs by default on `http://localhost:8080`.
 
-O projeto utiliza um banco H2 em memória, sem necessidade de configuração adicional. O console do H2 fica disponível em `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:testbd`, usuário: `sa`, sem senha).
+The project uses an in-memory H2 database, with no additional configuration required. The H2 console is available at `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:testbd`, user: `sa`, no password).
 
-## Como rodar os testes
+## How to run the tests
 
 ```bash
 # Windows
@@ -132,34 +132,51 @@ O projeto utiliza um banco H2 em memória, sem necessidade de configuração adi
 ./mvnw test
 ```
 
-O projeto conta com testes unitários organizados por classe, cobrindo as regras de negócio dos services, o comportamento dos controllers e o tratamento global de exceções — usando Mockito para isolar dependências externas (repositórios e chamadas HTTP).
+To run only a subset:
+
+```bash
+# unit tests only
+./mvnw test -Dtest='*Test,!*IntegrationTest'
+
+# integration tests only
+./mvnw test -Dtest='*IntegrationTest'
+```
+
+The project has two layers of automated tests:
+
+- **Unit tests** — isolate each class with Mockito, covering the business rules in the services, the controllers' behavior, and the global exception handling, without touching a real database or making real HTTP calls.
+- **Integration tests** — exercise the real Spring context end-to-end: controllers are called through `MockMvc` against a real H2 database (with automatic transaction rollback after each test), while external HTTP calls (authorization and notification services) are intercepted with `MockRestServiceServer` bound to the actual `RestTemplate` bean. They also cover the repository layer with `@DataJpaTest`, and verify that a failure mid-transaction (e.g., the notification service being unavailable) correctly rolls back balance changes and the persisted transaction, thanks to `@Transactional(rollbackFor = Exception.class)`.
 
 ```
 src/test/java/com/picpaysimplificado
 ├── controllers/
-│   ├── UserControllerTest.java
-│   └── TransactionControllerTest.java
+│   ├── UserControllerTest.java                    # unit
+│   ├── UserControllerIntegrationTest.java          # integration
+│   ├── TransactionControllerTest.java              # unit
+│   └── TransactionControllerIntegrationTest.java   # integration
 ├── services/
-│   ├── UserServiceTest.java
-│   ├── TransactionServiceTest.java
-│   └── NotificationServiceTest.java
+│   ├── UserServiceTest.java                        # unit
+│   ├── TransactionServiceTest.java                 # unit
+│   └── NotificationServiceTest.java                # unit
+├── repositories/
+│   ├── UserRepositoryIntegrationTest.java          # integration
+│   └── TransactionRepositoryIntegrationTest.java   # integration
 └── infra/
-    └── ControllerExceptionHandlerTest.java
+    └── ControllerExceptionHandlerTest.java          # unit
 ```
 
-## Possíveis evoluções
+## Possible future improvements
 
-Ideias para continuar evoluindo o projeto como exercício de aprendizado:
+Ideas to keep evolving the project as a learning exercise:
 
-- Autenticação e autorização com Spring Security + JWT
-- Documentação interativa da API com Swagger/OpenAPI
-- Migração do H2 para um banco relacional persistente (PostgreSQL) em produção
-- Testes de integração com `@SpringBootTest` e `@DataJpaTest`
-- Containerização com Docker e pipeline de CI/CD
+- Authentication and authorization with Spring Security + JWT
+- Interactive API documentation with Swagger/OpenAPI
+- Migrating from H2 to a persistent relational database (PostgreSQL) in production
+- Containerization with Docker and a CI/CD pipeline
 
-## Autor
+## Author
 
-Desenvolvido por **Joanne Silva** como projeto de estudo em Spring Boot.
+Developed by **Joanne Silva** as a Spring Boot learning project.
 
 - GitHub: [@joannegs](https://github.com/joannegs)
-- E-mail: joanneegabriela@gmail.com
+- Email: joanneegabriela@gmail.com
